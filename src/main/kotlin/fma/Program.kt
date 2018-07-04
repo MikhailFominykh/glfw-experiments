@@ -17,46 +17,44 @@ import org.lwjgl.opengl.GL20.glGetShaderInfoLog
 import org.lwjgl.opengl.GL20.glGetShaderiv
 import org.lwjgl.opengl.GL20.glLinkProgram
 import org.lwjgl.opengl.GL20.glShaderSource
-import org.lwjgl.opengl.GL20.glUseProgram
+import org.lwjgl.system.MemoryStack.stackPush
 
-private val int1 = intArrayOf(0)
+fun createProgram(vertexShaderSource: String, fragmentShaderSource: String): Int {
+    val vertexShader = createShader(GL_VERTEX_SHADER, vertexShaderSource)
+    val fragmentShader = createShader(GL_FRAGMENT_SHADER, fragmentShaderSource)
+    val program = glCreateProgram()
+    glAttachShader(program, vertexShader)
+    glAttachShader(program, fragmentShader)
+    glLinkProgram(program)
 
-class Program(val vertexShaderSource: String, val fragmentShaderSource: String) {
-
-    val program: Int
-
-    init {
-        val vertexShader = createShader(GL_VERTEX_SHADER, vertexShaderSource)
-        val fragmentShader = createShader(GL_FRAGMENT_SHADER, fragmentShaderSource)
-        program = glCreateProgram()
-        glAttachShader(program, vertexShader)
-        glAttachShader(program, fragmentShader)
-        glLinkProgram(program)
-
-        glGetProgramiv(program, GL_LINK_STATUS, int1)
-        if (int1[0] == GL_FALSE) {
+    stackPush().use { stack ->
+        val params = stack.mallocInt(1)
+        glGetProgramiv(program, GL_LINK_STATUS, params)
+        if (params[0] == GL_FALSE) {
             val log = glGetProgramInfoLog(program)
             println("Program link error:\n$log")
         }
-        glDetachShader(program, vertexShader)
-        glDeleteShader(vertexShader)
-        glDetachShader(program, fragmentShader)
-        glDeleteShader(fragmentShader)
     }
+    glDetachShader(program, vertexShader)
+    glDeleteShader(vertexShader)
+    glDetachShader(program, fragmentShader)
+    glDeleteShader(fragmentShader)
 
-    fun use() {
-        glUseProgram(program)
-    }
+    return program
+}
 
-    private fun createShader(type: Int, source: String): Int {
-        val shader = glCreateShader(type)
-        glShaderSource(shader, source)
-        glCompileShader(shader)
-        glGetShaderiv(shader, GL_COMPILE_STATUS, int1)
-        if (int1[0] == GL_FALSE) {
+fun createShader(type: Int, source: String): Int {
+    val shader = glCreateShader(type)
+    glShaderSource(shader, source)
+    glCompileShader(shader)
+
+    stackPush().use { stack ->
+        val params = stack.mallocInt(1)
+        glGetShaderiv(shader, GL_COMPILE_STATUS, params)
+        if (params[0] == GL_FALSE) {
             val log = glGetShaderInfoLog(shader)
             println("Shader (type: $type) compilation error:\n$log")
         }
-        return shader
     }
+    return shader
 }

@@ -2,7 +2,7 @@ project.ext.lwjglVersion = "3.1.6"
 project.ext.lwjglNatives = "natives-windows"
 
 buildscript {
-    ext.kotlin_version = '1.2.50'
+    ext.kotlin_version = '1.2.51'
 
     repositories {
         mavenCentral()
